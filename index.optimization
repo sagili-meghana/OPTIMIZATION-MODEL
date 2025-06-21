@@ -1,0 +1,26 @@
+import pulp
+
+problem = pulp.LpProblem("Diet Problem", pulp.LpMinimize)
+
+foods = ['Food1', 'Food2', 'Food3']
+costs = {'Food1': 0.5, 'Food2': 0.3, 'Food3': 0.2}
+requirements = {'Calories': 2000, 'Protein': 50, 'Fat': 20}
+nutrients = {
+    'Calories': {'Food1': 500, 'Food2': 300, 'Food3': 150},
+    'Protein': {'Food1': 30, 'Food2': 20, 'Food3': 10},
+    'Fat': {'Food1': 10, 'Food2': 15, 'Food3': 5}
+}
+
+food_vars = pulp.LpVariable.dicts("Amount", foods, lowBound=0, cat='Continuous')
+
+problem += pulp.lpSum([costs[f] * food_vars[f] for f in foods]), "Total Cost"
+
+for nutrient in requirements:
+    problem += pulp.lpSum([nutrients[nutrient][f] * food_vars[f] for f in foods]) >= requirements[nutrient], f"Min_{nutrient}"
+
+problem.solve()
+
+print(f"Status: {pulp.LpStatus[problem.status]}")
+for f in foods:
+    print(f"{f}: {food_vars[f].varValue:.2f} units")
+print(f"Total Cost: ${pulp.value(problem.objective):.2f}")
